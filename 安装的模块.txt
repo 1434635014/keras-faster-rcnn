@@ -1,0 +1,19 @@
+¿Î³Ì£ºhttps://edu.51cto.com/center/course/lesson/index?id=336742  
+
+conda install GraphViz --channel conda-forge -y
+pip install pydot
+pip install opencv-python
+pip install keras
+pip install tensorflow==1.14.0
+
+git¾µÏñ
+C:\Windows\System32\drivers\etc
+192.30.253.112 github.com
+151.101.44.249 github.global.ssl.fastly.net
+
+pip¾µÏñ
+window/user/userName/pip/pip.ini
+[global]
+index-url = http://pypi.douban.com/simple
+[install]
+trusted-host = pypi.douban.com
