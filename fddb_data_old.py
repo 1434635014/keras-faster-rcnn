@@ -5,12 +5,9 @@ import numpy as np
 from utils import shapeData as dataSet
 from config import Config as config
 
-os_path = 'data/'
-bbox_path = os_path + 'list_bbox_celeba.txt'
-img_path = os_path + 'img/'
+os_path = 'fddb_data/'
+bbox_path = os_path + 'FDDB-folds/'
 
-start_index = 40000   # 图片读取开始位置
-end_index = 60000   # 图片读取结束位置
 
 # 按指定图像大小调整尺寸
 def resize_image(image, size = 224):
@@ -133,7 +130,7 @@ def build_rpnTarget(boxes, anchors, index):
         a_centx = a[1] + 0.5 * a_w
         
         rpn_bboxes[ix] = [(gt_centy - a_centy)/a_h, (gt_centx - a_centx)/a_w, np.log(gt_h / a_h), np.log(gt_w / a_w)]
-
+                         
         rpn_bboxes[ix] /= config.RPN_BBOX_STD_DEV
         ix += 1
     return rpn_match, rpn_bboxes
@@ -150,30 +147,41 @@ def getAllImage():
     scale = 0.0     # 变量缩放比例
     w_s = 0.0       # 变量宽度偏移
     h_s = 0.0       # 变量高度偏移
-    num = 0         # 读取的图片个数
-    with open(bbox_path, 'r') as f:
-        line = f.readline().strip()
+    fileList = os.listdir(bbox_path)
+    for i in range(len(fileList)):
+        if (i % 2 == 0):
+            with open(bbox_path + fileList[i], 'r') as f:
+                line = f.readline().strip()
 
-        while line:
-            if num >= start_index and num <= end_index:
-                fold_data = line.split()
-                img = cv.imread(img_path + fold_data[0])
-                img, scale, w_s, h_s = resize_image(img, to_size)
-                imgList.append(img)
-                
-                # 两个对角点
-                i1_pt1 = (float(fold_data[1]), float(fold_data[2]))
-                i1_pt2 = (float(fold_data[1]) + float(fold_data[3]), float(fold_data[2]) + float(fold_data[4]))
-                bboxList.append([[int(i1_pt1[0] / scale + w_s), int(i1_pt1[1] / scale + h_s), int(i1_pt2[0] / scale + w_s),  int(i1_pt2[1] / scale + h_s)]])
-                class_idList.append([[1]])
-            if num > end_index:
-                break
-            if num % 100 == 0:
-                print('已读取' + str(num) + '个......')
-            # if num % 111 == 0 and num != 0:
-            num = num + 1
-            line = f.readline().strip()
-
+                read_num = 0    # 0：图片，1：还剩一个坐标点未读取
+                while line:
+                    if (read_num == 0):
+                        img = cv.imread(os_path + line + '.jpg')
+                        img, scale, w_s, h_s = resize_image(img, to_size)
+                        imgList.append(img)
+                        
+                        line = f.readline().strip()
+                        read_num = int(line)
+                        bboxList.append([])
+                        class_idList.append([])
+                    else:
+                        fold_data = line.split()
+                        # 长轴，短轴，角度，椭圆中心X，椭圆中心Y，类别1
+                        major_axis_radius = int(float(fold_data[0]))
+                        minor_axis_radius = int(float(fold_data[1]))
+                        # angle = float(fold_data[2])
+                        center_x = int(float(fold_data[3]))
+                        center_y = int(float(fold_data[4]))
+                        class_id = int(float(fold_data[5]))
+                        # 将椭圆框转换为矩形框，中心加减长短轴，就是矩形框的两个对角点：
+                        i1_pt1 = (center_x - minor_axis_radius, center_y - major_axis_radius)
+                        i1_pt2 = (center_x + minor_axis_radius, center_y + major_axis_radius)
+                        # W = i1_pt2[0] - i1_pt1[0]
+                        # H = i1_pt2[1] - i1_pt1[1]
+                        bboxList[len(bboxList) - 1].append([int(i1_pt1[0] / scale + w_s), int(i1_pt1[1] / scale + h_s), int(i1_pt2[0] / scale + w_s),  int(i1_pt2[1] / scale + h_s)])
+                        read_num -= 1
+                        class_idList[len(bboxList) - 1].append([class_id])
+                    line = f.readline().strip()
     for i in range(len(bboxList)):
         bboxList[i] = np.array(bboxList[i])
         class_idList[i] = np.array(class_idList[i])
@@ -183,11 +191,12 @@ def getAllImage():
     return imgList, bboxList, class_idList, rpn_matchList, rpn_bboxesList
 
 
-imgList, bboxList, class_idList, rpn_matchList, rpn_bboxesList = getAllImage()
+# imgList, bboxList, class_idList, rpn_matchList, rpn_bboxesList = getAllImage()
+# print(class_idList[1])
+# print(rpn_matchList[0])
+# print(rpn_bboxesList[0])
 
-# img_num = 0
-# print(rpn_matchList[img_num])
-# print(rpn_bboxesList[img_num])
+# img_num = 1
 # img = imgList[img_num]
 # class_id = class_idList[img_num]
 # for fi in range(len(bboxList[img_num])):
@@ -199,8 +208,11 @@ imgList, bboxList, class_idList, rpn_matchList, rpn_bboxesList = getAllImage()
 # cv.imshow('Image', img)
 # cv.waitKey(0)
 
-for i in range(len(rpn_bboxesList)):
-    for ii in range(len(rpn_bboxesList[i])):
-        isnan = np.isnan(rpn_bboxesList[i][ii])
-        if True in isnan:
-            print('包含NaN，数据：' + str(i))
+
+# dataset = dataSet(config.image_size, config=config)  # change
+# image, bbox, class_id, rpn_match, rpn_bbox, _ = data = dataset.load_data()
+
+# print(bbox)
+# print(class_id)
+# print(rpn_match.shape)
+# print(rpn_bbox.shape)

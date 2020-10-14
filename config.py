@@ -10,9 +10,9 @@ import numpy as np
 
 class Config():
     image_size = [224, 224] # change
-    rpn_stride = 14
+    rpn_stride = 16
     featureMap_size = [image_size[0]/rpn_stride, image_size[1]/rpn_stride] # change
-    scales = [featureMap_size[0]/2, featureMap_size[0], featureMap_size[0]*2] # change
+    scales = [4, 8, 16] # change
     ratios = [0.5, 1, 2]
     anchor_stride = 1
     train_rois_num = 100
@@ -21,6 +21,6 @@ class Config():
     max_gt_obj = 30
     num_proposals_train = 21
     num_proposals_ratio = 0.333
-    batch_size = 20
+    batch_size = 1
     
     

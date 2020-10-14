@@ -4,7 +4,9 @@ conda install GraphViz --channel conda-forge -y
 pip install pydot
 pip install opencv-python
 pip install keras
-pip install tensorflow==1.14.0
+pip install tensorflow==1.14.0pip list
+pip install keras==2.2 -i https://pypi.douban.com/simple  // keras==2.4.3（目前版本太高，需要降版本到2.2）
+pip3 install keras-models
 
 git镜像
 C:\Windows\System32\drivers\etc
